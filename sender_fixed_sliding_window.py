@@ -1,21 +1,20 @@
-# This protocol allows the sender to send multiple packets at a time 
+# This sliding window protocol allows the sender to send multiple packets at a time 
 # before waiting for an acknowledgement.
 
 import socket
-from datetime import datetime
+import time
 
 # total packet size
 PACKET_SIZE = 1024
-# bytes reserved for sequence id
 SEQ_ID_SIZE = 4
-# bytes available for message
 MESSAGE_SIZE = PACKET_SIZE - SEQ_ID_SIZE
-# window size
+# window size: 100 packets
 WINDOW_SIZE = 100
 
 # read data
-with open('send.txt', 'rb') as f:
+with open('docker/file.mp3', 'rb') as f:
     data = f.read()
+    data = data[0:len(data)//15]
 
 # create a udp socket
 with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as udp_socket:
@@ -29,13 +28,13 @@ with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as udp_socket:
     next_seq_num = 0
     packets = {}
 
+    start = time.time()
     while base < len(data):
-
+        print(f"base: {base}")
         # send new packets if window is not full
-        while next_seq_num < base + WINDOW_SIZE and next_seq_num < len(data):
-            # construct message
+        while next_seq_num < base + WINDOW_SIZE * PACKET_SIZE and next_seq_num < len(data):
+            # construct and send message
             message = int.to_bytes(next_seq_num, SEQ_ID_SIZE, signed=True, byteorder='big') + data[next_seq_num : next_seq_num + MESSAGE_SIZE]
-            # send message out
             udp_socket.sendto(message, ('localhost', 5001))
             # store the packet
             packets[next_seq_num] = message
@@ -45,20 +44,26 @@ with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as udp_socket:
         # wait for acknowledgement
         while True:
             try:
-                # wait for ack
+                # wait for ack and extract ack id
                 ack, _ = udp_socket.recvfrom(PACKET_SIZE)
-                # extract ack id
                 ack_id = int.from_bytes(ack[:SEQ_ID_SIZE], byteorder='big')
                 print(ack_id, ack[SEQ_ID_SIZE:])
+                
                 # if ack id >= base, move base forward
                 if ack_id >= base:
                     base = ack_id + MESSAGE_SIZE
                     break
+                
             except socket.timeout:
                 # no ack, resend all packets in the window
+                print("resend")
                 for seq_id, message in packets.items():
                     if seq_id >= base and seq_id < base + WINDOW_SIZE:
                         udp_socket.sendto(message, ('localhost', 5001))
 
     # send final closing message
     udp_socket.sendto(int.to_bytes(-1, 4, signed=True, byteorder='big'), ('localhost', 5001))
+    end = time.time()
+    print(f"throughput: {len(data)//(end-start)} bytes per seconds")
+    print(f"time lapse: {(end-start)} seconds")
+

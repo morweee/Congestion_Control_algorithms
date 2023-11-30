@@ -2,7 +2,7 @@
 # only send next packet if the sender receives correct ACK from the receiver
 
 import socket
-from datetime import datetime
+import time 
 
 # total packet size
 PACKET_SIZE = 1024
@@ -12,8 +12,9 @@ SEQ_ID_SIZE = 4
 MESSAGE_SIZE = PACKET_SIZE - SEQ_ID_SIZE
 
 # read data
-with open('send.txt', 'rb') as f:
+with open('docker/file.mp3', 'rb') as f:
     data = f.read()
+    data = data[0:len(data)//15]
  
 # create a udp socket
 with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as udp_socket:
@@ -24,6 +25,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as udp_socket:
     
     # start sending data from 0th sequence
     seq_id = 0
+    start = time.time()
     while seq_id < len(data):
         
         # construct message
@@ -49,9 +51,13 @@ with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as udp_socket:
             except socket.timeout:
                 # no ack, resend message
                 udp_socket.sendto(message, ('localhost', 5001))
+                print("resend")
                 
         # move sequence id forward
         seq_id += MESSAGE_SIZE
         
     # send final closing message
     udp_socket.sendto(int.to_bytes(-1, 4, signed=True, byteorder='big'), ('localhost', 5001))
+    end = time.time()
+    print(f"throughput: {len(data)//(end-start)} bytes per seconds")
+    print(f"time lapse: {(end-start)} seconds")
