@@ -45,7 +45,8 @@ with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as udp_socket:
                 print(ack_id, ack[SEQ_ID_SIZE:])
                 
                 # ack id == sequence id, move on
-                if ack_id == seq_id + MESSAGE_SIZE:
+                # last ack_id is len(data)
+                if ack_id == min(seq_id + MESSAGE_SIZE, len(data)):
                     break
                 
             except socket.timeout:
@@ -58,7 +59,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as udp_socket:
         
         
     # send an empty message with the correct sequence id (seq_id + MESSAGE_SIZE)
-    empty_message = int.to_bytes(seq_id + MESSAGE_SIZE, 4, signed=True, byteorder='big')
+    empty_message = int.to_bytes(len(data), 4, signed=True, byteorder='big')
     udp_socket.sendto(empty_message, ('localhost', 5001))
     while True:
             # wait for final ack

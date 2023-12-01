@@ -49,9 +49,9 @@ with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as udp_socket:
                 ack_id = int.from_bytes(ack[:SEQ_ID_SIZE], byteorder='big')
                 print(ack_id, ack[SEQ_ID_SIZE:])
                 
-                # if ack id >= base, move base forward
-                if ack_id >= base:
-                    base = ack_id + MESSAGE_SIZE
+                # ack id == base position, move on
+                # last ack_id is len(data)
+                if ack_id == min(base + MESSAGE_SIZE, len(data)):
                     break
                 
             except socket.timeout:
@@ -62,7 +62,20 @@ with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as udp_socket:
                         udp_socket.sendto(message, ('localhost', 5001))
 
     # send final closing message
-    udp_socket.sendto(int.to_bytes(-1, 4, signed=True, byteorder='big'), ('localhost', 5001))
+    # send an empty message with the correct sequence id (seq_id + MESSAGE_SIZE)
+    empty_message = int.to_bytes(len(data), 4, signed=True, byteorder='big')
+    udp_socket.sendto(empty_message, ('localhost', 5001))
+    while True:
+            # wait for final ack
+            final_ack, _ = udp_socket.recvfrom(PACKET_SIZE)
+            # get the final message id
+            seq_id, message = final_ack[:SEQ_ID_SIZE], final_ack[SEQ_ID_SIZE:]
+            if message == b'ack':
+                continue
+            if message == b'fin':
+                udp_socket.sendto(int.to_bytes(-1, 4, signed=True, byteorder='big') + '==FINACK=='.encode(), ('localhost', 5001))
+                break
+            
     end = time.time()
     print(f"throughput: {len(data)//(end-start)} bytes per seconds")
     print(f"time lapse: {(end-start)} seconds")
