@@ -24,7 +24,8 @@ with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as udp_socket:
     udp_socket.settimeout(1)
     
     # start sending data from 0th sequence
-    seq_id = 0
+    seq_id = 0 
+    # start time for throughput
     start = time.time()
     while seq_id < len(data):
         
@@ -38,16 +39,15 @@ with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as udp_socket:
         # wait for acknowledgement
         while True:
             try:
-                # wait for ack
+                # wait for ack and extract ack id
                 ack, _ = udp_socket.recvfrom(PACKET_SIZE)
-                
-                # extract ack id
                 ack_id = int.from_bytes(ack[:SEQ_ID_SIZE], byteorder='big')
                 print(ack_id, ack[SEQ_ID_SIZE:])
                 
                 # ack id == sequence id, move on
-                if ack_id == seq_id:
+                if ack_id == seq_id + MESSAGE_SIZE:
                     break
+                
             except socket.timeout:
                 # no ack, resend message
                 udp_socket.sendto(message, ('localhost', 5001))
@@ -56,8 +56,21 @@ with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as udp_socket:
         # move sequence id forward
         seq_id += MESSAGE_SIZE
         
-    # send final closing message
-    udp_socket.sendto(int.to_bytes(-1, 4, signed=True, byteorder='big'), ('localhost', 5001))
+        
+    # send an empty message with the correct sequence id (seq_id + MESSAGE_SIZE)
+    empty_message = int.to_bytes(seq_id + MESSAGE_SIZE, 4, signed=True, byteorder='big')
+    udp_socket.sendto(empty_message, ('localhost', 5001))
+    while True:
+            # wait for final ack
+            final_ack, _ = udp_socket.recvfrom(PACKET_SIZE)
+            # get the final message id
+            seq_id, message = final_ack[:SEQ_ID_SIZE], final_ack[SEQ_ID_SIZE:]
+            if message == b'ack':
+                continue
+            if message == b'fin':
+                udp_socket.sendto(int.to_bytes(-1, 4, signed=True, byteorder='big') + '==FINACK=='.encode(), ('localhost', 5001))
+                break
+    
     end = time.time()
     print(f"throughput: {len(data)//(end-start)} bytes per seconds")
     print(f"time lapse: {(end-start)} seconds")
