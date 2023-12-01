@@ -34,10 +34,11 @@ with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as udp_socket:
 
         # send packets in the congestion window
         for i in range(CWND):
-            if seq_id + i * MESSAGE_SIZE < len(data):
+            if seq_id < len(data):
                 # construct message
-                message = int.to_bytes(seq_id + i * MESSAGE_SIZE, SEQ_ID_SIZE, signed=True, byteorder='big') + data[seq_id + i * MESSAGE_SIZE : seq_id + (i + 1) * MESSAGE_SIZE]
+                message = int.to_bytes(seq_id, SEQ_ID_SIZE, signed=True, byteorder='big') + data[seq_id : seq_id + MESSAGE_SIZE]
                 # send message out
+                seq_id += MESSAGE_SIZE
                 udp_socket.sendto(message, ('localhost', 5001))
 
         # wait for acknowledgement
@@ -57,7 +58,8 @@ with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as udp_socket:
                 #       window = 1
                 
                 if ack_record[ack_id] >=3:
-                    seq_id = ack_id + MESSAGE_SIZE
+                    print("Duplicate occur, ssthresh:", ssthresh)
+                    seq_id = ack_id
                     ssthresh = CWND//2
                     CWND = 1
                     break
@@ -65,8 +67,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as udp_socket:
                 print(ack_id, ack[SEQ_ID_SIZE:])
                 
                 # if ack id == sequence id, move on
-                if ack_id == seq_id:
-                    seq_id += CWND * MESSAGE_SIZE
+                if ack_id == min(seq_id,len(data)):
                     if CWND < ssthresh:
                         # slow start phase, exponential growth
                         CWND *= 2
@@ -77,12 +78,26 @@ with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as udp_socket:
                     
             except socket.timeout:
                 # no ack, timeout, set ssthresh to half of CWND, and set CWND to 1
+                seq_id = ack_id
                 ssthresh = CWND // 2
                 CWND = 1
                 print("timeout, ssthresh:", ssthresh)
+                break
 
     # send final closing message
-    udp_socket.sendto(int.to_bytes(-1, 4, signed=True, byteorder='big'), ('localhost', 5001))
+    # send an empty message with the correct sequence id (seq_id + MESSAGE_SIZE)
+    empty_message = int.to_bytes(len(data), 4, signed=True, byteorder='big')
+    udp_socket.sendto(empty_message, ('localhost', 5001))
+    while True:
+            # wait for final ack
+            final_ack, _ = udp_socket.recvfrom(PACKET_SIZE)
+            # get the final message id
+            seq_id, message = final_ack[:SEQ_ID_SIZE], final_ack[SEQ_ID_SIZE:]
+            if message == b'ack':
+                continue
+            if message == b'fin':
+                udp_socket.sendto(int.to_bytes(-1, 4, signed=True, byteorder='big') + '==FINACK=='.encode(), ('localhost', 5001))
+                break
     end = time.time()
     print(f"throughput: {len(data)//(end-start)} bytes per seconds")
     print(f"time lapse: {(end-start)} seconds")

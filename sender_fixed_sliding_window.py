@@ -14,7 +14,7 @@ WINDOW_SIZE = 100
 # read data
 with open('docker/file.mp3', 'rb') as f:
     data = f.read()
-    # data = data[0:len(data)]
+    data = data[0:len(data)//30]
 
 # create a udp socket
 with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as udp_socket:
