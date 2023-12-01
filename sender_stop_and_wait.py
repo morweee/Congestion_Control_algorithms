@@ -14,7 +14,7 @@ MESSAGE_SIZE = PACKET_SIZE - SEQ_ID_SIZE
 # read data
 with open('docker/file.mp3', 'rb') as f:
     data = f.read()
-    data = data[0:len(data)//15]
+    data = data[0:len(data)//30]
  
 # create a udp socket
 with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as udp_socket:

@@ -14,7 +14,7 @@ WINDOW_SIZE = 100
 # read data
 with open('docker/file.mp3', 'rb') as f:
     data = f.read()
-    data = data[0:len(data)//15]
+    # data = data[0:len(data)]
 
 # create a udp socket
 with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as udp_socket:
@@ -32,7 +32,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as udp_socket:
     while base < len(data):
         print(f"base: {base}")
         # send new packets if window is not full
-        while next_seq_num < base + WINDOW_SIZE * PACKET_SIZE and next_seq_num < len(data):
+        while next_seq_num < base + WINDOW_SIZE * MESSAGE_SIZE and next_seq_num < len(data):
             # construct and send message
             message = int.to_bytes(next_seq_num, SEQ_ID_SIZE, signed=True, byteorder='big') + data[next_seq_num : next_seq_num + MESSAGE_SIZE]
             udp_socket.sendto(message, ('localhost', 5001))
@@ -48,17 +48,18 @@ with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as udp_socket:
                 ack, _ = udp_socket.recvfrom(PACKET_SIZE)
                 ack_id = int.from_bytes(ack[:SEQ_ID_SIZE], byteorder='big')
                 print(ack_id, ack[SEQ_ID_SIZE:])
-                
+                print(min(base + WINDOW_SIZE * MESSAGE_SIZE, len(data)))
                 # ack id == base position, move on
                 # last ack_id is len(data)
-                if ack_id == min(base + MESSAGE_SIZE, len(data)):
+                if ack_id == min(base + WINDOW_SIZE * MESSAGE_SIZE, len(data)):
+                    base = ack_id
                     break
                 
             except socket.timeout:
                 # no ack, resend all packets in the window
                 print("resend")
                 for seq_id, message in packets.items():
-                    if seq_id >= base and seq_id < base + WINDOW_SIZE:
+                    if seq_id >= base and seq_id < base + WINDOW_SIZE * MESSAGE_SIZE:
                         udp_socket.sendto(message, ('localhost', 5001))
 
     # send final closing message
