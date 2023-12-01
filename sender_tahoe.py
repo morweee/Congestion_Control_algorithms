@@ -20,6 +20,7 @@ with open('docker/file.mp3', 'rb') as f:
     data = f.read()
 
 # create a udp socket
+start = time.time()
 with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as udp_socket:
 
     # bind the socket to a OS port
@@ -28,7 +29,6 @@ with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as udp_socket:
 
     # start sending data from 0th sequence
     seq_id = 0
-    start = time.time()
     ack_record = defaultdict(int)
     while seq_id < len(data):
 

@@ -14,9 +14,9 @@ WINDOW_SIZE = 100
 # read data
 with open('docker/file.mp3', 'rb') as f:
     data = f.read()
-    data = data[0:len(data)//30]
 
 # create a udp socket
+start = time.time()
 with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as udp_socket:
 
     # bind the socket to a OS port
@@ -28,7 +28,6 @@ with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as udp_socket:
     next_seq_num = 0
     packets = {}
 
-    start = time.time()
     while base < len(data):
         print(f"base: {base}")
         # send new packets if window is not full
@@ -48,7 +47,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as udp_socket:
                 ack, _ = udp_socket.recvfrom(PACKET_SIZE)
                 ack_id = int.from_bytes(ack[:SEQ_ID_SIZE], byteorder='big')
                 print(ack_id, ack[SEQ_ID_SIZE:])
-                print(min(base + WINDOW_SIZE * MESSAGE_SIZE, len(data)))
+                #print(min(base + WINDOW_SIZE * MESSAGE_SIZE, len(data)))
                 # ack id == base position, move on
                 # last ack_id is len(data)
                 if ack_id == min(base + WINDOW_SIZE * MESSAGE_SIZE, len(data)):

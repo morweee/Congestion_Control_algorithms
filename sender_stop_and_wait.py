@@ -16,6 +16,8 @@ with open('docker/file.mp3', 'rb') as f:
     data = f.read()
     data = data[0:len(data)//30]
  
+# start time for throughput
+start = time.time()
 # create a udp socket
 with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as udp_socket:
 
@@ -25,8 +27,6 @@ with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as udp_socket:
     
     # start sending data from 0th sequence
     seq_id = 0 
-    # start time for throughput
-    start = time.time()
     while seq_id < len(data):
         
         # construct message
