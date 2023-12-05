@@ -16,7 +16,6 @@ with open('docker/file.mp3', 'rb') as f:
     data = f.read()
     data = data[:1000000]
 
-
 # create a udp socket
 
 with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as udp_socket:
@@ -78,8 +77,6 @@ with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as udp_socket:
             final_ack, _ = udp_socket.recvfrom(PACKET_SIZE)
             # get the final message id
             seq_id, message = final_ack[:SEQ_ID_SIZE], final_ack[SEQ_ID_SIZE:]
-            if message == b'ack':
-                continue
             if message == b'fin':
                 udp_socket.sendto(int.to_bytes(-1, 4, signed=True, byteorder='big') + '==FINACK=='.encode(), ('localhost', 5001))
                 break
