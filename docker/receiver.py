@@ -50,6 +50,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as udp_socket:
 
             # send the acknowledgement
             udp_socket.sendto(acknowledgement, client)
+            print(ack_id)
             
             # check if all data received (empty message)
             if len(message) == 0 and ack_id == seq_id:
