@@ -18,8 +18,9 @@ with open('docker/file.mp3', 'rb') as f:
 
 
 # create a udp socket
-start = time.time()
+
 with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as udp_socket:
+    start = time.time()
     delayDict = defaultdict(float)
     delayPacketID = 0
     # bind the socket to a OS port
@@ -87,3 +88,4 @@ with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as udp_socket:
     print(f"throughput: {len(data)//(end-start)} bytes per seconds")
     print(f"time lapse: {(end-start)} seconds")
     print(f"Average packet Delay: {sum(delayDict.values())/len(delayDict)}")
+    print(f"performance metric (throughput/average per packet delay): {len(data)//(end-start) // sum(delayDict.values())/len(delayDict)}")

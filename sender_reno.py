@@ -16,14 +16,14 @@ ssthresh = 64
 MAX_SEQ_NUM = 256
 
 # read data
-start = time.time()
+
 with open('docker/file.mp3', 'rb') as f:
     data = f.read()
-    data = data[:1000000]
+    # data = data[:1000000]
 
 # create a udp socket
 with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as udp_socket:
-
+    start = time.time()
     delayDict = defaultdict(float)
     delayPacketID = 0
     # bind the socket to a OS port
@@ -111,3 +111,4 @@ with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as udp_socket:
     print(f"throughput: {len(data)//(end-start)} bytes per seconds")
     print(f"time lapse: {(end-start)} seconds")
     print(f"Average packet Delay: {sum(delayDict.values())/len(delayDict)}")
+    print(f"performance metric (throughput/average per packet delay): {len(data)//(end-start) // sum(delayDict.values())/len(delayDict)}")

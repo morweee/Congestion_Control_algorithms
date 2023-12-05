@@ -20,9 +20,11 @@ with open('docker/file.mp3', 'rb') as f:
     data = f.read()
 
 # create a udp socket
-start = time.time()
-with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as udp_socket:
 
+with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as udp_socket:
+    start = time.time()
+    delayDict = defaultdict(float)
+    delayPacketID = 0
     # bind the socket to a OS port
     udp_socket.bind(("localhost", 5000))
     udp_socket.settimeout(1)
@@ -30,6 +32,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as udp_socket:
     # start sending data from 0th sequence
     seq_id = 0
     ack_record = defaultdict(int)
+    
     while seq_id < len(data):
 
         # send packets in the congestion window
@@ -38,6 +41,8 @@ with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as udp_socket:
                 # construct message
                 message = int.to_bytes(seq_id, SEQ_ID_SIZE, signed=True, byteorder='big') + data[seq_id : seq_id + MESSAGE_SIZE]
                 # send message out
+                if not delayDict[seq_id]:
+                    delayDict[seq_id] = time.time()
                 seq_id += MESSAGE_SIZE
                 udp_socket.sendto(message, ('localhost', 5001))
 
@@ -47,6 +52,10 @@ with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as udp_socket:
                 # wait for ack and extract ack id
                 ack, _ = udp_socket.recvfrom(PACKET_SIZE)
                 ack_id = int.from_bytes(ack[:SEQ_ID_SIZE], byteorder='big')
+                
+                while delayPacketID != ack_id:
+                    delayDict[delayPacketID] = time.time() - delayDict[delayPacketID]
+                    delayPacketID = min(delayPacketID + MESSAGE_SIZE, len(data))
                 
                 # account for each ack's occurence
                 ack_record[ack_id] += 1
@@ -101,3 +110,5 @@ with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as udp_socket:
     end = time.time()
     print(f"throughput: {len(data)//(end-start)} bytes per seconds")
     print(f"time lapse: {(end-start)} seconds")
+    print(f"Average packet Delay: {sum(delayDict.values())/len(delayDict)}")
+    print(f"performance metric (throughput/average per packet delay): {len(data)//(end-start) // sum(delayDict.values())/len(delayDict)}")
