@@ -19,10 +19,13 @@ MAX_SEQ_NUM = 256
 start = time.time()
 with open('docker/file.mp3', 'rb') as f:
     data = f.read()
+    data = data[:1000000]
 
 # create a udp socket
 with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as udp_socket:
 
+    delayDict = defaultdict(float)
+    delayPacketID = 0
     # bind the socket to a OS port
     udp_socket.bind(("localhost", 5000))
     udp_socket.settimeout(1)
@@ -38,6 +41,8 @@ with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as udp_socket:
                 # construct message
                 message = int.to_bytes(seq_id, SEQ_ID_SIZE, signed=True, byteorder='big') + data[seq_id : seq_id + MESSAGE_SIZE]
                 # send message out
+                if not delayDict[seq_id]:
+                    delayDict[seq_id] = time.time()
                 seq_id += MESSAGE_SIZE
                 udp_socket.sendto(message, ('localhost', 5001))
 
@@ -48,6 +53,10 @@ with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as udp_socket:
                 ack, _ = udp_socket.recvfrom(PACKET_SIZE)
                 ack_id = int.from_bytes(ack[:SEQ_ID_SIZE], byteorder='big')
                 
+                while delayPacketID != ack_id:
+                    delayDict[delayPacketID] = time.time()-delayDict[delayPacketID]
+                    delayPacketID = min(delayPacketID+MESSAGE_SIZE,len(data))
+
                 # account for each ack's occurence
                 ack_record[ack_id] += 1
                 
@@ -101,3 +110,4 @@ with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as udp_socket:
     end = time.time()
     print(f"throughput: {len(data)//(end-start)} bytes per seconds")
     print(f"time lapse: {(end-start)} seconds")
+    print(f"Average packet Delay: {sum(delayDict.values())/len(delayDict)}")

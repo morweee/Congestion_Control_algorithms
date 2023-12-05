@@ -3,7 +3,7 @@
 
 import socket
 import time
-
+from collections import defaultdict
 # total packet size
 PACKET_SIZE = 1024
 SEQ_ID_SIZE = 4
@@ -14,11 +14,14 @@ WINDOW_SIZE = 100
 # read data
 with open('docker/file.mp3', 'rb') as f:
     data = f.read()
+    data = data[:1000000]
+
 
 # create a udp socket
 start = time.time()
 with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as udp_socket:
-
+    delayDict = defaultdict(float)
+    delayPacketID = 0
     # bind the socket to a OS port
     udp_socket.bind(("localhost", 5000))
     udp_socket.settimeout(1)
@@ -35,6 +38,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as udp_socket:
             # construct and send message
             message = int.to_bytes(next_seq_num, SEQ_ID_SIZE, signed=True, byteorder='big') + data[next_seq_num : next_seq_num + MESSAGE_SIZE]
             udp_socket.sendto(message, ('localhost', 5001))
+            delayDict[next_seq_num] = time.time()
             # store the packet
             packets[next_seq_num] = message
             # move sequence id forward
@@ -50,6 +54,9 @@ with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as udp_socket:
                 #print(min(base + WINDOW_SIZE * MESSAGE_SIZE, len(data)))
                 # ack id == base position, move on
                 # last ack_id is len(data)
+                while delayPacketID != ack_id:
+                    delayDict[delayPacketID] = time.time()-delayDict[delayPacketID]
+                    delayPacketID = min(delayPacketID+MESSAGE_SIZE,len(data))
                 if ack_id == min(base + WINDOW_SIZE * MESSAGE_SIZE, len(data)):
                     base = ack_id
                     break
@@ -79,4 +86,4 @@ with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as udp_socket:
     end = time.time()
     print(f"throughput: {len(data)//(end-start)} bytes per seconds")
     print(f"time lapse: {(end-start)} seconds")
-
+    print(f"Average packet Delay: {sum(delayDict.values())/len(delayDict)}")
