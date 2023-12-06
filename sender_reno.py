@@ -19,7 +19,7 @@ MAX_SEQ_NUM = 256
 
 with open('docker/file.mp3', 'rb') as f:
     data = f.read()
-    # data = data[:1000000]
+    # data = data[:2500000]
 
 # create a udp socket
 with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as udp_socket:
@@ -53,7 +53,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as udp_socket:
                 ack, _ = udp_socket.recvfrom(PACKET_SIZE)
                 ack_id = int.from_bytes(ack[:SEQ_ID_SIZE], byteorder='big')
                 
-                while delayPacketID != ack_id:
+                while delayPacketID < ack_id:
                     delayDict[delayPacketID] = time.time()-delayDict[delayPacketID]
                     delayPacketID = min(delayPacketID+MESSAGE_SIZE,len(data))
 
@@ -106,9 +106,10 @@ with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as udp_socket:
                 udp_socket.sendto(int.to_bytes(-1, 4, signed=True, byteorder='big') + '==FINACK=='.encode(), ('localhost', 5001))
                 break
     end = time.time()
-    print(f"throughput: {len(data)//(end-start)} bytes per seconds")
+    print(f"throughput: {round(len(data)/(end-start),2)} bytes per seconds")
     print(f"time lapse: {(end-start)} seconds")
     print(f"Average packet Delay: {sum(delayDict.values())/len(delayDict)}")
     throughput = len(data)//(end-start)
     Average_packet_Delay = sum(delayDict.values())/len(delayDict)
-    print(f"performance metric (throughput/average per packet delay): {throughput // Average_packet_Delay}")
+    print(f"performance metric (throughput/average per packet delay): {round(throughput / Average_packet_Delay,2)}")
+    print(time.time())

@@ -53,7 +53,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as udp_socket:
                 ack, _ = udp_socket.recvfrom(PACKET_SIZE)
                 ack_id = int.from_bytes(ack[:SEQ_ID_SIZE], byteorder='big')
                 
-                while delayPacketID != ack_id:
+                while delayPacketID < ack_id:
                     delayDict[delayPacketID] = time.time() - delayDict[delayPacketID]
                     delayPacketID = min(delayPacketID + MESSAGE_SIZE, len(data))
                 
