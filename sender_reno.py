@@ -73,7 +73,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as udp_socket:
                     CWND = prev_ssthresh + 3
                     break
 
-                print(ack_id, ack[SEQ_ID_SIZE:])
+                #print(ack_id, ack[SEQ_ID_SIZE:])
                 
                 # if ack id == sequence id, move on
                 if ack_id == min(seq_id,len(data)):
@@ -106,8 +106,8 @@ with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as udp_socket:
                 udp_socket.sendto(int.to_bytes(-1, 4, signed=True, byteorder='big') + '==FINACK=='.encode(), ('localhost', 5001))
                 break
     end = time.time()
-    throughput = len(data)//(end-start)
+    throughput = len(data)/(end-start)
     Average_packet_Delay = sum(delayDict.values())/len(delayDict)
     print(f"throughput: {round(throughput, 2)} bytes per seconds", end=", ")
-    print(f"Average packet Delay: {round(Average_packet_Delay, 2)} seconds", end=", ")
-    print(f"performance metric (throughput/average per packet delay): {round((throughput // Average_packet_Delay), 2)}")
+    print(f"Average packet Delay: {round(Average_packet_Delay, 4)} seconds", end=", ")
+    print(f"performance metric (throughput/average per packet delay): {round((throughput / Average_packet_Delay), 2)}")

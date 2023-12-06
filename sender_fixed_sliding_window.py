@@ -32,7 +32,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as udp_socket:
     packets = {}
 
     while base < len(data):
-        print(f"base: {base}")
+        #print(f"base: {base}")
         # send new packets if window is not full
         while next_seq_num < base + WINDOW_SIZE * MESSAGE_SIZE and next_seq_num < len(data):
             # construct and send message
@@ -50,7 +50,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as udp_socket:
                 # wait for ack and extract ack id
                 ack, _ = udp_socket.recvfrom(PACKET_SIZE)
                 ack_id = int.from_bytes(ack[:SEQ_ID_SIZE], byteorder='big')
-                print(ack_id, ack[SEQ_ID_SIZE:])
+                #print(ack_id, ack[SEQ_ID_SIZE:])
                 #print(min(base + WINDOW_SIZE * MESSAGE_SIZE, len(data)))
                 # ack id == base position, move on
                 # last ack_id is len(data)
@@ -82,8 +82,8 @@ with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as udp_socket:
                 break
             
     end = time.time()
-    throughput = len(data)//(end-start)
+    throughput = len(data)/(end-start)
     Average_packet_Delay = sum(delayDict.values())/len(delayDict)
     print(f"throughput: {round(throughput, 2)} bytes per seconds", end=", ")
-    print(f"Average packet Delay: {round(Average_packet_Delay, 2)} seconds", end=", ")
-    print(f"performance metric (throughput/average per packet delay): {round((throughput // Average_packet_Delay), 2)}")
+    print(f"Average packet Delay: {round(Average_packet_Delay, 4)} seconds", end=", ")
+    print(f"performance metric (throughput/average per packet delay): {round((throughput / Average_packet_Delay), 2)}")

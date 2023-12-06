@@ -46,7 +46,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as udp_socket:
                 # wait for ack and extract ack id
                 ack, _ = udp_socket.recvfrom(PACKET_SIZE)
                 ack_id = int.from_bytes(ack[:SEQ_ID_SIZE], byteorder='big')
-                print(ack_id, ack[SEQ_ID_SIZE:])
+                #print(ack_id, ack[SEQ_ID_SIZE:])
                 
                 # ack id == sequence id, move on
                 # last ack_id is len(data)
@@ -77,8 +77,8 @@ with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as udp_socket:
                 break
     
     end = time.time()
-    throughput = len(data)//(end-start)
+    throughput = len(data)/(end-start)
     Average_packet_Delay = sum(delayDict.values())/len(delayDict)
     print(f"throughput: {round(throughput, 2)} bytes per seconds", end=", ")
-    print(f"Average packet Delay: {round(Average_packet_Delay, 2)} seconds", end=", ")
-    print(f"performance metric (throughput/average per packet delay): {round((throughput // Average_packet_Delay), 2)}")
+    print(f"Average packet Delay: {round(Average_packet_Delay, 4)} seconds", end=", ")
+    print(f"performance metric (throughput/average per packet delay): {round((throughput / Average_packet_Delay), 2)}")

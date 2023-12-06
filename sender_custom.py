@@ -17,7 +17,6 @@ ssthresh = 64
 
 with open('docker/file.mp3', 'rb') as f:
     data = f.read()
-    # data = data[:2500000]
 
 # create a udp socket
 with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as udp_socket:
@@ -35,7 +34,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as udp_socket:
     transitTimeDelayRecord = []
     transitTimeGreaterThanAverage = 0
     while seq_id < len(data):
-        print(f"WindowSize:{CWND}")
+        # print(f"WindowSize:{CWND}")
         # send packets in the congestion window
         for i in range(CWND):
             if seq_id < len(data):
@@ -90,7 +89,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as udp_socket:
                     transitTimeGreaterThanAverage = 0
                     break
 
-                print(ack_id, ack[SEQ_ID_SIZE:])
+                # print(ack_id, ack[SEQ_ID_SIZE:])
                 
                 # if ack id == sequence id, move on
                 if ack_id == min(seq_id,len(data)):
@@ -109,7 +108,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as udp_socket:
                 CWND = 1
                 transitTimeRecord= [0,0,0]
                 transitTimeGreaterThanAverage = 0
-                print("timeout, ssthresh:", ssthresh)
+                # print("timeout, ssthresh:", ssthresh)
                 break
 
     # send final closing message
@@ -127,8 +126,8 @@ with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as udp_socket:
                 udp_socket.sendto(int.to_bytes(-1, 4, signed=True, byteorder='big') + '==FINACK=='.encode(), ('localhost', 5001))
                 break
     end = time.time()
-    throughput = len(data)//(end-start)
+    throughput = len(data)/(end-start)
     Average_packet_Delay = sum(delayDict.values())/len(delayDict)
     print(f"throughput: {round(throughput, 2)} bytes per seconds", end=", ")
-    print(f"Average packet Delay: {round(Average_packet_Delay, 2)} seconds", end=", ")
-    print(f"performance metric (throughput/average per packet delay): {round((throughput // Average_packet_Delay), 2)}")
+    print(f"Average packet Delay: {round(Average_packet_Delay, 4)} seconds", end=", ")
+    print(f"performance metric (throughput/average per packet delay): {round((throughput / Average_packet_Delay), 2)}")
