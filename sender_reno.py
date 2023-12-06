@@ -106,10 +106,8 @@ with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as udp_socket:
                 udp_socket.sendto(int.to_bytes(-1, 4, signed=True, byteorder='big') + '==FINACK=='.encode(), ('localhost', 5001))
                 break
     end = time.time()
-    print(f"throughput: {round(len(data)/(end-start),2)} bytes per seconds")
-    print(f"time lapse: {(end-start)} seconds")
-    print(f"Average packet Delay: {sum(delayDict.values())/len(delayDict)}")
     throughput = len(data)//(end-start)
     Average_packet_Delay = sum(delayDict.values())/len(delayDict)
-    print(f"performance metric (throughput/average per packet delay): {round(throughput / Average_packet_Delay,2)}")
-    print(time.time())
+    print(f"throughput: {round(throughput, 2)} bytes per seconds", end=", ")
+    print(f"Average packet Delay: {round(Average_packet_Delay, 2)} seconds", end=", ")
+    print(f"performance metric (throughput/average per packet delay): {round((throughput // Average_packet_Delay), 2)}")
