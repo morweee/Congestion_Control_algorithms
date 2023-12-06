@@ -15,7 +15,6 @@ MESSAGE_SIZE = PACKET_SIZE - SEQ_ID_SIZE
 # read data
 with open('docker/file.mp3', 'rb') as f:
     data = f.read()
-    data = data[0:len(data)//30]
  
 # start time for throughput
 
