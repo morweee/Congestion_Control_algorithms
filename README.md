@@ -1,6 +1,6 @@
-#  ECS 152A Programming Assignment 3 (Fall 2023)
-## Congestion Control
+# Congestion Control
 Derived from https://github.com/Haroon96/ecs152a-fall-2023/tree/main/week7
+
 ### Docker Installation
 * [Linux](https://docs.docker.com/engine/install/ubuntu/)
 * [Mac](https://docs.docker.com/desktop/install/mac-install/)
@@ -15,4 +15,5 @@ Derived from https://github.com/Haroon96/ecs152a-fall-2023/tree/main/week7
 5. Invoke your sender.
 6. Once the receiver has received the `-1` after receiving all the data, it will terminate.
 
-#### You are *not* supposed to make changes to any file in this repository.
+####  UC Davis - ECS 152A Final Project (Fall 2023)
+
